@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Welcome -->
+<div class="d-flex align-center justify-between flex-wrap gap-2 mb-4">
+  <div>
+    <h2 style="font-size:22px;font-weight:800;color:#1a3a5c;">Welcome, {{ session.get('user_name') }}!</h2>
+    <p class="text-muted">Here's your digital signature system overview.</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{{ url_for('sign_document_route') }}" class="btn btn-primary">
+      <i class="fas fa-file-signature"></i> Sign Document
+    </a>
+    <a href="{{ url_for('verify') }}" class="btn btn-outline">
+      <i class="fas fa-magnifying-glass-check"></i> Verify Document
+    </a>
+  </div>
+</div>
+
+<!-- Stat Cards -->
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-icon blue"><i class="fas fa-file-pdf"></i></div>
+    <div class="stat-info">
+      <div class="stat-value">{{ total_docs }}</div>
+      <div class="stat-label">Signed Documents</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+    <div class="stat-info">
+      <div class="stat-value">{{ valid_verif }}</div>
+      <div class="stat-label">Valid Verifications</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon red"><i class="fas fa-xmark-circle"></i></div>
+    <div class="stat-info">
+      <div class="stat-value">{{ failed_verif }}</div>
+      <div class="stat-label">Failed Verifications</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon {% if cert_valid %}green{% else %}red{% endif %}">
+      <i class="fas fa-certificate"></i>
+    </div>
+    <div class="stat-info">
+      <div class="stat-value" style="font-size:16px;">
+        {% if cert %}
+          <span class="badge badge-{{ 'active' if cert_valid else 'danger' }}">
+            {{ 'ACTIVE' if cert_valid else 'EXPIRED' }}
+          </span>
+        {% else %}
+          <span class="badge badge-warning">NONE</span>
+        {% endif %}
+      </div>
+      <div class="stat-label">Certificate Status</div>
+    </div>
+  </div>
+</div>
+
+<!-- Certificate Notice -->
+{% if not cert %}
+<div class="alert alert-warning">
+  <i class="fas fa-triangle-exclamation"></i>
+  <div>
+    <strong>No certificate found.</strong>
+    You don't have an active certificate. <a href="{{ url_for('certificates') }}">Generate one now</a> to start signing documents.
+  </div>
+</div>
+{% elif not cert_valid %}
+<div class="alert alert-danger">
+  <i class="fas fa-exclamation-circle"></i>
+  <div>
+    <strong>Certificate expired or revoked.</strong>
+    <a href="{{ url_for('certificates') }}">Go to Certificate Management</a> to regenerate your certificate.
+  </div>
+</div>
+{% endif %}
+
+<!-- Recent Documents -->
+<div class="card">
+  <div class="card-header">
+    <h3><i class="fas fa-clock-rotate-left"></i> Recent Signed Documents</h3>
+    <a href="{{ url_for('sign_document_route') }}" class="btn btn-sm btn-primary">
+      <i class="fas fa-plus"></i> Sign New
+    </a>
+  </div>
+  {% if recent_docs %}
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Document Name</th>
+          <th>SHA-256 Hash</th>
+          <th>Signed At</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for doc in recent_docs %}
+        <tr>
+          <td>
+            <i class="fas fa-file-pdf" style="color:#ef4444;"></i>
+            {{ doc.document_name }}
+          </td>
+          <td>
+            <span class="mono" style="font-size:11px;">{{ doc.sha256_hash[:20] }}...</span>
+          </td>
+          <td class="text-muted">{{ doc.signed_at | format_datetime }}</td>
+          <td>
+            <a href="{{ url_for('verify') }}?doc_id={{ doc.id }}" class="btn btn-sm btn-outline">
+              <i class="fas fa-magnifying-glass-check"></i> Verify
+            </a>
+            <a href="{{ url_for('download_document', doc_id=doc.id) }}" class="btn btn-sm btn-secondary">
+              <i class="fas fa-download"></i>
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-body text-center" style="padding:48px;">
+    <i class="fas fa-file-signature" style="font-size:48px;color:#cbd5e1;margin-bottom:12px;"></i>
+    <p class="text-muted">No documents signed yet.</p>
+    <a href="{{ url_for('sign_document_route') }}" class="btn btn-primary mt-2">
+      <i class="fas fa-upload"></i> Upload &amp; Sign Your First Document
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Quick Actions -->
+<div class="card">
+  <div class="card-header"><h3><i class="fas fa-bolt"></i> Quick Actions</h3></div>
+  <div class="card-body">
+    <div class="d-flex gap-3 flex-wrap">
+      <a href="{{ url_for('certificates') }}" class="btn btn-outline">
+        <i class="fas fa-certificate"></i> Manage Certificate
+      </a>
+      <a href="{{ url_for('sign_document_route') }}" class="btn btn-primary">
+        <i class="fas fa-file-signature"></i> Sign Document
+      </a>
+      <a href="{{ url_for('verify') }}" class="btn btn-success">
+        <i class="fas fa-magnifying-glass-check"></i> Verify Document
+      </a>
+      <a href="{{ url_for('history') }}" class="btn btn-secondary">
+        <i class="fas fa-clock-rotate-left"></i> Verification History
+      </a>
+      <a href="{{ url_for('logout') }}" class="btn btn-danger">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

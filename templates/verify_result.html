@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% block title %}Verification Result{% endblock %}
+{% block page_title %}Verification Result{% endblock %}
+
+{% block content %}
+<!-- Main Result Banner -->
+<div class="verify-result {{ result.status }}">
+  <div class="result-icon">
+    {% if result.status == 'valid' %}
+      <i class="fas fa-circle-check"></i>
+    {% elif result.status == 'tampered' %}
+      <i class="fas fa-triangle-exclamation"></i>
+    {% else %}
+      <i class="fas fa-circle-xmark"></i>
+    {% endif %}
+  </div>
+  <div class="result-title">
+    {% if result.status == 'valid' %}
+      &#x2705; VALID &mdash; Signature Verified
+    {% elif result.status == 'tampered' %}
+      &#x26A0; TAMPERED &mdash; Document Modified After Signing
+    {% else %}
+      &#x274C; INVALID &mdash; Signature Verification Failed
+    {% endif %}
+  </div>
+  <div class="result-message">{{ result.message }}</div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;" class="flex-wrap">
+
+  <!-- Technical Details -->
+  <div class="card">
+    <div class="card-header"><h3><i class="fas fa-microscope"></i> Technical Details</h3></div>
+    <div class="card-body">
+      {% set d = result.details %}
+
+      <div class="mb-3">
+        <div class="form-label">Document</div>
+        <div><strong>{{ d.get('document_name', 'N/A') }}</strong></div>
+      </div>
+
+      <div class="mb-3">
+        <div class="form-label">Owner</div>
+        <div>{{ d.get('owner_name', 'N/A') }} &lt;{{ d.get('owner_email', '') }}&gt;</div>
+      </div>
+
+      <div class="mb-3">
+        <div class="form-label">Certificate Serial</div>
+        <div class="mono" style="font-size:11px;">{{ d.get('certificate_serial', 'N/A') }}</div>
+      </div>
+
+      <div class="mb-3">
+        <div class="form-label">Certificate Status</div>
+        <span class="badge badge-{{ 'active' if d.get('certificate_status') == 'active' else 'danger' }}">
+          {{ d.get('certificate_status', 'N/A') | upper }}
+        </span>
+        {% if d.get('certificate_valid') %}
+          <span class="badge badge-active" style="margin-left:4px;">Not Expired</span>
+        {% else %}
+          <span class="badge badge-warning" style="margin-left:4px;">Expired/Revoked</span>
+        {% endif %}
+      </div>
+
+      <div class="mb-3">
+        <div class="form-label">Signed At</div>
+        <div class="text-muted">{{ d.get('signed_at', 'N/A') }}</div>
+      </div>
+
+      <div class="mb-3">
+        <div class="form-label">Verification Step Result</div>
+        <div class="alert alert-{{ 'success' if result.status == 'valid' else ('warning' if result.status == 'tampered' else 'danger') }}"
+             style="margin:0;padding:10px;font-size:13px;">
+          {{ d.get('verification_step', 'N/A') }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hash Comparison -->
+  <div class="card">
+    <div class="card-header"><h3><i class="fas fa-fingerprint"></i> Cryptographic Analysis</h3></div>
+    <div class="card-body">
+
+      <div class="mb-3">
+        <div class="form-label">Stored SHA-256 Hash <small class="text-muted">(at signing time)</small></div>
+        <div class="hash-display">{{ d.get('stored_hash', 'N/A') }}</div>
+      </div>
+
+      <div class="mb-3">
+        <div class="form-label">Computed SHA-256 Hash <small class="text-muted">(uploaded file)</small></div>
+        <div class="hash-display" style="color:{% if d.get('hashes_match') %}#34d399{% else %}#f87171{% endif %};">
+          {{ d.get('computed_hash', 'N/A') }}
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <div class="form-label">Hash Comparison</div>
+        {% if d.get('hashes_match') %}
+          <span class="badge badge-valid"><i class="fas fa-check"></i> MATCH &mdash; Content Unchanged</span>
+        {% else %}
+          <span class="badge badge-danger"><i class="fas fa-xmark"></i> MISMATCH &mdash; Content Changed!</span>
+        {% endif %}
+      </div>
+
+      <div class="mb-3">
+        <div class="form-label">RSA-PSS Signature (SHA-256)</div>
+        {% if d.get('signature_valid') == True %}
+          <span class="badge badge-valid"><i class="fas fa-check"></i> VERIFIED</span>
+        {% elif d.get('signature_valid') == False %}
+          <span class="badge badge-danger"><i class="fas fa-xmark"></i> FAILED</span>
+        {% else %}
+          <span class="badge badge-info">Not evaluated (tamper detected via hash first)</span>
+        {% endif %}
+      </div>
+
+      <div class="mb-3">
+        <div class="form-label">Algorithm</div>
+        <div class="text-muted" style="font-size:13px;">RSA-2048 / RSA-PSS with SHA-256 / MGF1</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Actions -->
+<div class="card">
+  <div class="card-body">
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{{ url_for('verify') }}" class="btn btn-primary">
+        <i class="fas fa-rotate"></i> Verify Another
+      </a>
+      <a href="{{ url_for('history') }}" class="btn btn-secondary">
+        <i class="fas fa-clock-rotate-left"></i> Verification History
+      </a>
+      <a href="{{ url_for('dashboard') }}" class="btn btn-outline">
+        <i class="fas fa-gauge-high"></i> Dashboard
+      </a>
+      {% if doc_id %}
+      <a href="{{ url_for('download_document', doc_id=doc_id) }}" class="btn btn-secondary">
+        <i class="fas fa-download"></i> Download Original Document
+      </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

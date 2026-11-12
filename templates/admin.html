@@ -1,0 +1,236 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block page_title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="alert alert-warning">
+  <i class="fas fa-user-shield"></i>
+  <strong>Admin Panel</strong> &mdash; You have full administrative access. Changes affect all users system-wide.
+</div>
+
+<!-- Admin Stats -->
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+    <div class="stat-info">
+      <div class="stat-value">{{ total_users }}</div>
+      <div class="stat-label">Total Users</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon teal"><i class="fas fa-certificate"></i></div>
+    <div class="stat-info">
+      <div class="stat-value">{{ total_certs }}</div>
+      <div class="stat-label">Certificates</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon orange"><i class="fas fa-file-pdf"></i></div>
+    <div class="stat-info">
+      <div class="stat-value">{{ total_docs }}</div>
+      <div class="stat-label">Signed Documents</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon blue"><i class="fas fa-magnifying-glass-check"></i></div>
+    <div class="stat-info">
+      <div class="stat-value">{{ total_verif }}</div>
+      <div class="stat-label">Total Verifications</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+    <div class="stat-info">
+      <div class="stat-value">{{ valid_verif }}</div>
+      <div class="stat-label">Valid Verifications</div>
+    </div>
+  </div>
+</div>
+
+<!-- User Management -->
+<div class="card">
+  <div class="card-header">
+    <h3><i class="fas fa-users-gear"></i> User Management</h3>
+    <span class="text-muted" style="font-size:13px;">{{ users | length }} users registered</span>
+  </div>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Registered</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td class="text-muted">{{ user.id }}</td>
+          <td><strong>{{ user.name }}</strong></td>
+          <td class="text-muted">{{ user.email }}</td>
+          <td>
+            {% if user.role == 'admin' %}
+              <span class="admin-badge">Admin</span>
+            {% else %}
+              <span class="badge badge-info">User</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge badge-{{ 'active' if user.is_active else 'danger' }}">
+              {{ 'Active' if user.is_active else 'Deactivated' }}
+            </span>
+          </td>
+          <td class="text-muted">{{ user.created_at | format_datetime }}</td>
+          <td>
+            {% if user.id != session.get('user_id') %}
+            <form method="POST" action="{{ url_for('admin_toggle_user', user_id=user.id) }}" style="display:inline;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit"
+                      class="btn btn-sm {{ 'btn-warning' if user.is_active else 'btn-success' }}"
+                      onclick="return confirm('{{ 'Deactivate' if user.is_active else 'Activate' }} this user account?')">
+                <i class="fas fa-{{ 'ban' if user.is_active else 'check' }}"></i>
+                {{ 'Deactivate' if user.is_active else 'Activate' }}
+              </button>
+            </form>
+            {% else %}
+            <span class="text-muted" style="font-size:12px;">Current session</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Certificate Management -->
+<div class="card">
+  <div class="card-header">
+    <h3><i class="fas fa-certificate"></i> Certificate Management</h3>
+    <span class="text-muted" style="font-size:13px;">{{ certs | length }} certificates</span>
+  </div>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>User</th>
+          <th>Serial (first 16 chars)</th>
+          <th>Issue Date</th>
+          <th>Expiry Date</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cert in certs %}
+        <tr>
+          <td class="text-muted">{{ cert.id }}</td>
+          <td>
+            <strong>{{ cert.name }}</strong><br>
+            <span class="text-muted" style="font-size:11px;">{{ cert.email }}</span>
+          </td>
+          <td><span class="mono" style="font-size:11px;">{{ cert.certificate_serial[:16] }}...</span></td>
+          <td class="text-muted">{{ cert.issue_date | format_datetime }}</td>
+          <td class="text-muted">{{ cert.expiry_date | format_datetime }}</td>
+          <td>
+            <span class="badge badge-{{ cert.status }}">{{ cert.status | upper }}</span>
+          </td>
+          <td>
+            {% if cert.status == 'active' %}
+            <form method="POST" action="{{ url_for('admin_revoke_cert', cert_id=cert.id) }}" style="display:inline;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-sm btn-danger"
+                      onclick="return confirm('Revoke this certificate? The user will not be able to sign new documents.')">
+                <i class="fas fa-ban"></i> Revoke
+              </button>
+            </form>
+            {% else %}
+            <span class="text-muted" style="font-size:12px;">{{ cert.status | capitalize }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Recent Signed Documents -->
+<div class="card">
+  <div class="card-header"><h3><i class="fas fa-file-pdf"></i> Recent Signed Documents</h3></div>
+  {% if recent_docs %}
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Document</th>
+          <th>Owner</th>
+          <th>SHA-256 Hash</th>
+          <th>Signed At</th>
+          <th>File Size</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for doc in recent_docs %}
+        <tr>
+          <td><i class="fas fa-file-pdf" style="color:#ef4444;"></i> {{ doc.document_name }}</td>
+          <td>
+            {{ doc.owner_name }}<br>
+            <span class="text-muted" style="font-size:11px;">{{ doc.owner_email }}</span>
+          </td>
+          <td><span class="mono" style="font-size:11px;">{{ doc.sha256_hash[:20] }}...</span></td>
+          <td class="text-muted">{{ doc.signed_at | format_datetime }}</td>
+          <td class="text-muted">{{ doc.file_size | file_size_fmt }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-body text-center text-muted" style="padding:32px;">No signed documents yet.</div>
+  {% endif %}
+</div>
+
+<!-- Recent Verifications -->
+<div class="card">
+  <div class="card-header"><h3><i class="fas fa-magnifying-glass-check"></i> Recent Verification Attempts</h3></div>
+  {% if recent_verif %}
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Document</th>
+          <th>Verifier</th>
+          <th>Status</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in recent_verif %}
+        <tr>
+          <td>{{ log.document_name or '<span class="text-muted">Deleted</span>' }}</td>
+          <td>
+            {{ log.verifier_name or 'Unknown' }}<br>
+            <span class="text-muted" style="font-size:11px;">{{ log.verifier_email or '' }}</span>
+          </td>
+          <td>
+            <span class="badge badge-{{ log.verification_status }}">
+              {{ log.verification_status | upper }}
+            </span>
+          </td>
+          <td class="text-muted">{{ log.verification_date | format_datetime }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-body text-center text-muted" style="padding:32px;">No verification attempts yet.</div>
+  {% endif %}
+</div>
+{% endblock %}

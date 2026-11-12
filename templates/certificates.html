@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block title %}My Certificate{% endblock %}
+{% block page_title %}My Digital Certificate{% endblock %}
+
+{% block content %}
+<div class="d-flex align-center justify-between flex-wrap gap-2 mb-4">
+  <div>
+    <p class="text-muted">Your RSA-2048 certificate used for document signing.</p>
+  </div>
+  <form method="POST" action="{{ url_for('regenerate_certificate') }}" style="display:inline;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-warning"
+            onclick="return confirm('Regenerate certificate? This will create a new RSA key pair. Old signatures remain verifiable using the old public key stored in the database.')">
+      <i class="fas fa-rotate"></i> Regenerate Certificate
+    </button>
+  </form>
+</div>
+
+{% if cert %}
+<!-- Certificate Visual Card -->
+<div class="cert-card mb-4">
+  <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+    <div style="font-size:40px;"><i class="fas fa-certificate"></i></div>
+    <div>
+      <div style="font-size:20px;font-weight:800;">Digital Certificate</div>
+      <div style="font-size:12px;opacity:0.7;">RSA-2048 &bull; Self-Signed &bull; Local Demo Only</div>
+    </div>
+    <div style="margin-left:auto;">
+      <span class="badge badge-{{ 'active' if cert_valid else 'danger' }}" style="font-size:12px;padding:6px 14px;">
+        {{ '✓ ACTIVE' if cert_valid else '✗ EXPIRED/REVOKED' }}
+      </span>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div>
+      <div class="cert-label">Certificate Holder</div>
+      <div class="cert-value">{{ session.get('user_name') }}</div>
+      <div class="cert-label">Email</div>
+      <div class="cert-value">{{ session.get('user_email') }}</div>
+      <div class="cert-label">Serial Number</div>
+      <div class="cert-value" style="font-size:11px;font-family:monospace;">{{ cert.certificate_serial }}</div>
+    </div>
+    <div>
+      <div class="cert-label">Issue Date</div>
+      <div class="cert-value">{{ cert.issue_date | format_datetime }}</div>
+      <div class="cert-label">Expiry Date</div>
+      <div class="cert-value">{{ cert.expiry_date | format_datetime }}</div>
+      <div class="cert-label">Key Algorithm</div>
+      <div class="cert-value">RSA-2048</div>
+    </div>
+  </div>
+
+  {% if cert_data and cert_data.get('issuer') %}
+  <div class="cert-label" style="margin-top:16px;">Issuer</div>
+  <div class="cert-value" style="font-size:12px;">{{ cert_data.issuer.common_name }}</div>
+  {% endif %}
+
+  <div class="cert-notice">
+    <i class="fas fa-triangle-exclamation"></i>
+    <strong>Notice:</strong> This is a self-signed certificate generated for academic demonstration purposes only.
+    It is <strong>NOT</strong> issued by a trusted Certificate Authority (CA) and should not be used in production systems.
+  </div>
+</div>
+
+<!-- Public Key -->
+<div class="card">
+  <div class="card-header">
+    <h3><i class="fas fa-key"></i> Public Key (RSA-2048)</h3>
+    <span class="text-muted" style="font-size:12px;">Safe to share &mdash; private key is stored encrypted on server only</span>
+  </div>
+  <div class="card-body">
+    <div class="hash-display" style="color:#60a5fa;white-space:pre-wrap;line-height:1.5;">
+{{ cert.public_key }}
+    </div>
+    <div class="d-flex gap-2 mt-3">
+      <a href="{{ url_for('download_certificate') }}" class="btn btn-primary">
+        <i class="fas fa-download"></i> Download Certificate (JSON)
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Certificate Details -->
+{% if cert_data %}
+<div class="card">
+  <div class="card-header"><h3><i class="fas fa-info-circle"></i> Certificate Details</h3></div>
+  <div class="card-body">
+    <div class="hash-display" style="color:#34d399;white-space:pre-wrap;font-size:12px;line-height:1.6;">
+{{ cert_data | tojson(indent=2) }}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% else %}
+<!-- No certificate -->
+<div class="card">
+  <div class="card-body text-center" style="padding:64px;">
+    <i class="fas fa-certificate" style="font-size:64px;color:#cbd5e1;margin-bottom:16px;"></i>
+    <h3 style="color:#1a3a5c;margin-bottom:8px;">No Certificate Found</h3>
+    <p class="text-muted mb-4">You don't have a digital certificate yet. Generate one to start signing documents.</p>
+    <form method="POST" action="{{ url_for('regenerate_certificate') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-primary btn-lg">
+        <i class="fas fa-plus"></i> Generate Certificate &amp; Key Pair
+      </button>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

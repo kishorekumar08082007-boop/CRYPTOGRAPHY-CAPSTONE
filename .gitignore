@@ -1,0 +1,26 @@
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Environment and secrets (CRITICAL: Never commit .env with passwords and secret keys)
+.env
+*.env.local
+
+# Generated runtime keys and uploads
+keys/*
+!keys/.gitkeep
+
+certificates/*
+!certificates/.gitkeep
+
+uploads/*
+!uploads/.gitkeep
+
+# IDE & OS files
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
+.DS_Store

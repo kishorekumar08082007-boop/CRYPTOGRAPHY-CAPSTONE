@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - Digital Signature System</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div class="auth-container">
+  <div class="auth-card" style="max-width:500px;">
+    <div class="auth-logo">
+      <div class="logo-icon"><i class="fas fa-user-plus"></i></div>
+      <h2>Create Account</h2>
+      <p>Register to get your digital certificate and signing keys</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
+            <i class="fas fa-exclamation-circle"></i> {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('register') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-user"></i> Full Name</label>
+        <input type="text" name="name" class="form-control" placeholder="Your full name"
+               value="{{ name or '' }}" required autocomplete="name">
+      </div>
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-envelope"></i> Email Address</label>
+        <input type="email" name="email" class="form-control" placeholder="you@example.com"
+               value="{{ email or '' }}" required autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-lock"></i> Password</label>
+        <input type="password" name="password" id="password" class="form-control"
+               placeholder="Minimum 8 characters" required autocomplete="new-password">
+        <div class="form-hint">At least 8 characters</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-lock"></i> Confirm Password</label>
+        <input type="password" name="confirm_password" class="form-control"
+               placeholder="Repeat your password" required autocomplete="new-password">
+      </div>
+
+      <div class="alert alert-info" style="font-size:13px;">
+        <i class="fas fa-info-circle"></i>
+        <div>
+          <strong>Auto-generated on registration:</strong><br>
+          &bull; RSA-2048 key pair (private key stored encrypted, never sent to browser)<br>
+          &bull; Self-signed digital certificate (valid 1 year)<br>
+          &bull; This is a local demo — <em>not</em> a trusted CA certificate
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100">
+        <i class="fas fa-user-plus"></i> Register &amp; Generate Keys
+      </button>
+    </form>
+
+    <div class="text-center mt-3">
+      <span class="text-muted">Already have an account?</span>
+      <a href="{{ url_for('login') }}"> Sign in</a>
+    </div>
+    <div class="text-center mt-2">
+      <a href="{{ url_for('index') }}" class="text-muted" style="font-size:12px;">
+        <i class="fas fa-arrow-left"></i> Back to Home
+      </a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

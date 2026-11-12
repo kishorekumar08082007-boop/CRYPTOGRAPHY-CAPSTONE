@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}Verification History{% endblock %}
+{% block page_title %}Verification History{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <h3><i class="fas fa-clock-rotate-left"></i> Verification History</h3>
+    <span class="text-muted" style="font-size:13px;">{{ logs | length }} records</span>
+  </div>
+
+  {% if logs %}
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Document</th>
+          <th>Status</th>
+          <th>Verifier</th>
+          <th>Date &amp; Time</th>
+          <th>Uploaded Hash</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td class="text-muted">{{ log.id }}</td>
+          <td>
+            {% if log.document_name %}
+              <i class="fas fa-file-pdf" style="color:#ef4444;"></i>
+              {% if log.document_id %}
+                <a href="{{ url_for('verify') }}?doc_id={{ log.document_id }}">{{ log.document_name }}</a>
+              {% else %}
+                {{ log.document_name }}
+              {% endif %}
+            {% else %}
+              <span class="text-muted"><i class="fas fa-trash"></i> Document deleted</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge badge-{{ log.verification_status }}">
+              {% if log.verification_status == 'valid' %}
+                <i class="fas fa-check"></i> VALID
+              {% elif log.verification_status == 'tampered' %}
+                <i class="fas fa-triangle-exclamation"></i> TAMPERED
+              {% else %}
+                <i class="fas fa-xmark"></i> INVALID
+              {% endif %}
+            </span>
+          </td>
+          <td class="text-muted">{{ log.verifier_name or 'Unknown' }}</td>
+          <td class="text-muted">{{ log.verification_date | format_datetime }}</td>
+          <td>
+            {% if log.uploaded_file_hash %}
+              <span class="mono" style="font-size:11px;">{{ log.uploaded_file_hash[:20] }}...</span>
+            {% else %}
+              <span class="text-muted">N/A</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-body text-center" style="padding:64px;">
+    <i class="fas fa-clock-rotate-left" style="font-size:56px;color:#cbd5e1;margin-bottom:16px;display:block;"></i>
+    <h3 style="color:#1a3a5c;margin-bottom:8px;">No Verification History</h3>
+    <p class="text-muted mb-4">You haven't verified any documents yet.</p>
+    <a href="{{ url_for('verify') }}" class="btn btn-primary">
+      <i class="fas fa-magnifying-glass-check"></i> Verify a Document
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Status Legend -->
+<div class="card">
+  <div class="card-header"><h3><i class="fas fa-circle-info"></i> Status Legend</h3></div>
+  <div class="card-body">
+    <div class="d-flex gap-3 flex-wrap">
+      <div class="d-flex align-center gap-2">
+        <span class="badge badge-valid"><i class="fas fa-check"></i> VALID</span>
+        <span class="text-muted" style="font-size:13px;">Signature cryptographically verified, document content unchanged</span>
+      </div>
+      <div class="d-flex align-center gap-2">
+        <span class="badge badge-tampered"><i class="fas fa-triangle-exclamation"></i> TAMPERED</span>
+        <span class="text-muted" style="font-size:13px;">SHA-256 hash mismatch &mdash; document was modified after signing</span>
+      </div>
+      <div class="d-flex align-center gap-2">
+        <span class="badge badge-invalid"><i class="fas fa-xmark"></i> INVALID</span>
+        <span class="text-muted" style="font-size:13px;">RSA-PSS signature verification failed &mdash; corrupted or wrong key</span>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

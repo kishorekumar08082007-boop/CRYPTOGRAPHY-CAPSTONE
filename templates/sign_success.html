@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}Document Signed{% endblock %}
+{% block page_title %}Document Signed Successfully{% endblock %}
+
+{% block content %}
+<div class="verify-result valid" style="margin-bottom:24px;">
+  <div class="result-icon"><i class="fas fa-circle-check"></i></div>
+  <div class="result-title">Document Signed Successfully!</div>
+  <div class="result-message">Your document has been signed using RSA-PSS with SHA-256.</div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr auto;gap:24px;align-items:start;" class="flex-wrap">
+  <!-- Document Details -->
+  <div>
+    <div class="card">
+      <div class="card-header"><h3><i class="fas fa-file-pdf"></i> Document Details</h3></div>
+      <div class="card-body">
+        <table style="width:100%;font-size:14px;">
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:10px 0;color:#64748b;font-weight:600;width:160px;">Document Name</td>
+            <td style="padding:10px 0;"><strong>{{ doc.document_name }}</strong></td>
+          </tr>
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:10px 0;color:#64748b;font-weight:600;">File Size</td>
+            <td style="padding:10px 0;">{{ doc.file_size | file_size_fmt }}</td>
+          </tr>
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:10px 0;color:#64748b;font-weight:600;">Signed At</td>
+            <td style="padding:10px 0;">{{ doc.signed_at | format_datetime }}</td>
+          </tr>
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:10px 0;color:#64748b;font-weight:600;">Certificate</td>
+            <td style="padding:10px 0;"><span class="mono">{{ doc.certificate_serial[:16] }}...</span></td>
+          </tr>
+          <tr>
+            <td style="padding:10px 0;color:#64748b;font-weight:600;">Algorithm</td>
+            <td style="padding:10px 0;">RSA-2048 / RSA-PSS / SHA-256</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3><i class="fas fa-fingerprint"></i> SHA-256 Document Hash</h3></div>
+      <div class="card-body">
+        <p class="text-muted mb-2" style="font-size:13px;">This cryptographic hash uniquely identifies the document content. Any modification changes this hash.</p>
+        <div class="hash-display">{{ doc.sha256_hash }}</div>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{{ url_for('download_document', doc_id=doc.id) }}" class="btn btn-primary">
+        <i class="fas fa-download"></i> Download Signed Document
+      </a>
+      <a href="{{ url_for('verify') }}?doc_id={{ doc.id }}" class="btn btn-success">
+        <i class="fas fa-magnifying-glass-check"></i> Verify This Document
+      </a>
+      <a href="{{ url_for('sign_document_route') }}" class="btn btn-secondary">
+        <i class="fas fa-plus"></i> Sign Another
+      </a>
+      <a href="{{ url_for('dashboard') }}" class="btn btn-outline">
+        <i class="fas fa-gauge-high"></i> Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- QR Code -->
+  <div>
+    <div class="qr-container">
+      <div style="font-size:12px;font-weight:700;color:#1a3a5c;margin-bottom:12px;">
+        <i class="fas fa-qrcode"></i> Verification QR Code
+      </div>
+      <img src="data:image/png;base64,{{ qr_b64 }}" alt="QR Code" width="180">
+      <p>Scan to verify this document</p>
+      <p style="font-size:10px;color:#94a3b8;">{{ verify_url }}</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

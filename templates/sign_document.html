@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% block title %}Sign Document{% endblock %}
+{% block page_title %}Sign Document{% endblock %}
+
+{% block content %}
+{% if not cert_valid %}
+<div class="alert alert-warning">
+  <i class="fas fa-triangle-exclamation"></i>
+  <div>
+    <strong>No valid certificate.</strong>
+    You need an active certificate to sign documents.
+    <a href="{{ url_for('certificates') }}">Generate or renew your certificate</a>.
+  </div>
+</div>
+{% endif %}
+
+<!-- Upload Form -->
+<div class="card">
+  <div class="card-header">
+    <h3><i class="fas fa-file-signature"></i> Upload &amp; Sign PDF Document</h3>
+    {% if cert_valid %}
+    <span class="badge badge-active"><i class="fas fa-check"></i> Certificate Active</span>
+    {% else %}
+    <span class="badge badge-danger"><i class="fas fa-xmark"></i> No Valid Certificate</span>
+    {% endif %}
+  </div>
+  <div class="card-body">
+    <!-- Process Steps -->
+    <div class="steps">
+      <div class="step done">
+        <div class="step-num"><i class="fas fa-check" style="font-size:12px;"></i></div>
+        <div class="step-label">Authenticate</div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step active">
+        <div class="step-num">2</div>
+        <div class="step-label">Upload PDF</div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-label">SHA-256 Hash</div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-label">RSA-PSS Sign</div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-label">Complete</div>
+      </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('sign_document_route') }}" enctype="multipart/form-data" id="sign-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      
+      <!-- Drop zone -->
+      <label for="doc-file">
+        <div class="upload-zone" id="drop-zone">
+          <div class="upload-icon"><i class="fas fa-cloud-arrow-up"></i></div>
+          <p style="font-size:16px;font-weight:600;color:#1a3a5c;">Drop your PDF here or click to browse</p>
+          <p>Accepted: PDF files only &bull; Maximum: 16 MB</p>
+          <p id="file-name" style="color:#3b82f6;font-weight:600;display:none;"></p>
+          <input type="file" name="document" id="doc-file" accept=".pdf" required>
+        </div>
+      </label>
+
+      <div class="alert alert-info mt-3" style="font-size:13px;">
+        <i class="fas fa-info-circle"></i>
+        <div>
+          <strong>What happens when you sign:</strong><br>
+          1. The PDF is uploaded to the server<br>
+          2. SHA-256 hash is computed from the file bytes<br>
+          3. The hash is signed using your RSA-2048 private key with RSA-PSS<br>
+          4. Document metadata and signature are stored in the database<br>
+          5. A QR code is generated for easy verification
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg w-100" {% if not cert_valid %}disabled{% endif %} id="sign-btn">
+        <i class="fas fa-signature"></i> Sign Document
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- Previously Signed Documents -->
+{% if documents %}
+<div class="card">
+  <div class="card-header"><h3><i class="fas fa-folder-open"></i> Your Signed Documents</h3></div>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Document</th>
+          <th>SHA-256 Hash</th>
+          <th>Signed At</th>
+          <th>Cert Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for doc in documents %}
+        <tr>
+          <td><i class="fas fa-file-pdf" style="color:#ef4444;"></i> {{ doc.document_name }}</td>
+          <td><span class="mono">{{ doc.sha256_hash[:24] }}...</span></td>
+          <td class="text-muted">{{ doc.signed_at | format_datetime }}</td>
+          <td>
+            <span class="badge badge-{{ 'active' if doc.cert_status == 'active' else 'danger' }}">
+              {{ doc.cert_status | upper }}
+            </span>
+          </td>
+          <td>
+            <a href="{{ url_for('verify') }}?doc_id={{ doc.id }}" class="btn btn-sm btn-outline">
+              <i class="fas fa-magnifying-glass-check"></i>
+            </a>
+            <a href="{{ url_for('download_document', doc_id=doc.id) }}" class="btn btn-sm btn-secondary">
+              <i class="fas fa-download"></i>
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('doc-file');
+const fileName = document.getElementById('file-name');
+const signBtn = document.getElementById('sign-btn');
+
+fileInput.addEventListener('change', function() {
+  if (this.files[0]) {
+    fileName.textContent = '\u2714 ' + this.files[0].name + ' (' + (this.files[0].size / 1024).toFixed(1) + ' KB)';
+    fileName.style.display = 'block';
+  }
+});
+
+dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) {
+    fileInput.files = e.dataTransfer.files;
+    fileName.textContent = '\u2714 ' + e.dataTransfer.files[0].name;
+    fileName.style.display = 'block';
+  }
+});
+
+document.getElementById('sign-form').addEventListener('submit', function() {
+  if (signBtn) {
+    signBtn.innerHTML = '<span class="spinner"></span> Signing...';
+    signBtn.disabled = true;
+  }
+});
+</script>
+{% endblock %}

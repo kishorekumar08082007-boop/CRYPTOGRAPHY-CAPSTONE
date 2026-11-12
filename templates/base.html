@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}DSS{% endblock %} - Digital Signature System</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon"><i class="fas fa-shield-halved"></i></div>
+      <h1>Digital Signature<br>System</h1>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a href="{{ url_for('dashboard') }}" class="{% if request.endpoint == 'dashboard' %}active{% endif %}">
+        <i class="fas fa-gauge-high"></i> Dashboard
+      </a>
+      <div class="nav-section-label">Documents</div>
+      <a href="{{ url_for('sign_document_route') }}" class="{% if request.endpoint == 'sign_document_route' or request.endpoint == 'sign_success' %}active{% endif %}">
+        <i class="fas fa-file-signature"></i> Sign Document
+      </a>
+      <a href="{{ url_for('verify') }}" class="{% if request.endpoint == 'verify' %}active{% endif %}">
+        <i class="fas fa-magnifying-glass-check"></i> Verify Document
+      </a>
+      <a href="{{ url_for('history') }}" class="{% if request.endpoint == 'history' %}active{% endif %}">
+        <i class="fas fa-clock-rotate-left"></i> Verification History
+      </a>
+      <div class="nav-section-label">Security</div>
+      <a href="{{ url_for('certificates') }}" class="{% if request.endpoint == 'certificates' %}active{% endif %}">
+        <i class="fas fa-certificate"></i> My Certificate
+      </a>
+      {% if session.get('role') == 'admin' %}
+      <div class="nav-section-label">Admin</div>
+      <a href="{{ url_for('admin_dashboard') }}" class="{% if request.endpoint == 'admin_dashboard' %}active{% endif %}">
+        <i class="fas fa-user-shield"></i> Admin Panel
+      </a>
+      {% endif %}
+    </nav>
+    <div class="sidebar-footer">
+      <i class="fas fa-lock"></i> DSS v1.0 &bull; Secure Demo
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <header class="top-bar">
+      <div class="d-flex align-center gap-2">
+        <button class="hamburger" onclick="toggleSidebar()">
+          <i class="fas fa-bars"></i>
+        </button>
+        <h2 class="top-bar-title">{% block page_title %}Dashboard{% endblock %}</h2>
+      </div>
+      <div class="top-bar-user">
+        <div class="user-avatar">{{ session.get('user_name', 'U')[0].upper() }}</div>
+        <div>
+          <div style="font-weight:600;color:#1e293b;">{{ session.get('user_name') }}</div>
+          <div style="font-size:11px;color:#94a3b8;">{{ session.get('role', 'user')|capitalize }}
+            {% if session.get('role') == 'admin' %}<span class="admin-badge">Admin</span>{% endif %}
+          </div>
+        </div>
+        <a href="{{ url_for('logout') }}" class="btn btn-sm btn-secondary" style="margin-left:8px;">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <!-- Flash messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
+              <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% elif category == 'warning' %}triangle-exclamation{% else %}circle-info{% endif %}"></i>
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Signature System - Home</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div class="landing">
+  <span class="landing-logo"><i class="fas fa-shield-halved"></i></span>
+  <h1>Digital Certificate &amp;<br>Document Signature System</h1>
+  <p>A secure, cryptographically-verified document signing and verification platform. 
+     Sign documents with RSA-2048 and detect tampering instantly using SHA-256 hashing.</p>
+  <div class="landing-buttons">
+    <a href="{{ url_for('register') }}" class="btn btn-lg" style="background:white;color:#1a3a5c;font-weight:800;">
+      <i class="fas fa-user-plus"></i> Get Started
+    </a>
+    <a href="{{ url_for('login') }}" class="btn btn-lg btn-outline" style="border-color:rgba(255,255,255,0.6);color:white;">
+      <i class="fas fa-sign-in-alt"></i> Sign In
+    </a>
+  </div>
+
+  <div class="landing-features">
+    <div class="feature-card">
+      <div class="feature-icon"><i class="fas fa-key"></i></div>
+      <h3>RSA-2048 Keys</h3>
+      <p>Industry-standard RSA key pairs generated and stored securely per user</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><i class="fas fa-file-signature"></i></div>
+      <h3>RSA-PSS Signing</h3>
+      <p>Sign PDF documents using RSA-PSS with SHA-256 — no weak custom crypto</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><i class="fas fa-magnifying-glass-check"></i></div>
+      <h3>Tamper Detection</h3>
+      <p>Instantly detect if a document was modified after signing using hash comparison</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><i class="fas fa-certificate"></i></div>
+      <h3>Digital Certificates</h3>
+      <p>Self-signed certificates with expiry tracking and status management</p>
+    </div>
+  </div>
+
+  <p style="margin-top:40px;font-size:12px;opacity:0.5;">
+    <i class="fas fa-triangle-exclamation"></i>
+    This is a self-signed, local demonstration system for academic purposes. Not a production PKI.
+  </p>
+</div>
+</body>
+</html>

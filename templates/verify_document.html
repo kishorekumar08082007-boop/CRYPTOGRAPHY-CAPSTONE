@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% block title %}Verify Document{% endblock %}
+{% block page_title %}Verify Document{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <h3><i class="fas fa-magnifying-glass-check"></i> Verify Document Signature</h3>
+  </div>
+  <div class="card-body">
+
+    <!-- Steps -->
+    <div class="steps" style="margin-bottom:28px;">
+      <div class="step done">
+        <div class="step-num"><i class="fas fa-check" style="font-size:11px;"></i></div>
+        <div class="step-label">Authenticate</div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step active">
+        <div class="step-num">2</div>
+        <div class="step-label">Select &amp; Upload</div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-label">Hash Comparison</div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-label">RSA-PSS Verify</div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-label">Result</div>
+      </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('verify') }}" enctype="multipart/form-data" id="verify-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-file-pdf"></i> Select Signed Document Record</label>
+        <select name="doc_id" class="form-select" required id="doc-select">
+          <option value="">-- Select a document record to verify --</option>
+          {% for doc in documents %}
+          <option value="{{ doc.id }}" {% if prefill_doc_id == doc.id %}selected{% endif %}>
+            {{ doc.document_name }} &mdash; Signed {{ doc.signed_at | format_datetime }}
+          </option>
+          {% endfor %}
+        </select>
+        <div class="form-hint">Select the document whose signature you want to verify.</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-cloud-arrow-up"></i> Upload Document File to Verify</label>
+        <label for="verify-file">
+          <div class="upload-zone" id="verify-drop">
+            <div class="upload-icon"><i class="fas fa-file-magnifying-glass"></i></div>
+            <p style="font-size:15px;font-weight:600;color:#1a3a5c;">Drop the PDF here or click to browse</p>
+            <p>Upload the original or a potentially modified copy &mdash; the system will detect tampering</p>
+            <p id="verify-fname" style="color:#3b82f6;font-weight:600;display:none;"></p>
+            <input type="file" name="document" id="verify-file" accept=".pdf" required>
+          </div>
+        </label>
+        <div class="form-hint">The system recomputes the SHA-256 hash and verifies the RSA-PSS signature.</div>
+      </div>
+
+      <div class="alert alert-info" style="font-size:13px;">
+        <i class="fas fa-info-circle"></i>
+        <div>
+          <strong>How verification works:</strong><br>
+          1. <strong>SHA-256 Hash</strong> is recomputed from your uploaded file bytes<br>
+          2. <strong>Hash Comparison</strong>: compared against the stored original hash &mdash; mismatch = TAMPERED<br>
+          3. <strong>RSA-PSS Signature</strong>: verified using the stored RSA-2048 public key<br>
+          4. <strong>Certificate Check</strong>: expiry and revocation status validated
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg w-100" id="verify-btn">
+        <i class="fas fa-magnifying-glass-check"></i> Verify Document
+      </button>
+    </form>
+  </div>
+</div>
+
+{% if not documents %}
+<div class="alert alert-warning">
+  <i class="fas fa-triangle-exclamation"></i>
+  You have no signed documents yet. <a href="{{ url_for('sign_document_route') }}">Sign a document first</a>.
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+const vFile = document.getElementById('verify-file');
+const vFname = document.getElementById('verify-fname');
+const vDrop = document.getElementById('verify-drop');
+const vBtn = document.getElementById('verify-btn');
+
+vFile.addEventListener('change', function() {
+  if (this.files[0]) {
+    vFname.textContent = '\u2714 ' + this.files[0].name + ' (' + (this.files[0].size / 1024).toFixed(1) + ' KB)';
+    vFname.style.display = 'block';
+  }
+});
+
+vDrop.addEventListener('dragover', (e) => { e.preventDefault(); vDrop.classList.add('drag-over'); });
+vDrop.addEventListener('dragleave', () => vDrop.classList.remove('drag-over'));
+vDrop.addEventListener('drop', (e) => {
+  e.preventDefault();
+  vDrop.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) {
+    vFile.files = e.dataTransfer.files;
+    vFname.textContent = '\u2714 ' + e.dataTransfer.files[0].name;
+    vFname.style.display = 'block';
+  }
+});
+
+document.getElementById('verify-form').addEventListener('submit', function() {
+  if (vBtn) {
+    vBtn.innerHTML = '<span class="spinner"></span> Verifying...';
+    vBtn.disabled = true;
+  }
+});
+</script>
+{% endblock %}
